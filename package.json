@@ -4,8 +4,11 @@
     "author": "Max Schaefer <schaefer@ntu.edu.sg>",
     "description": "Proxy for rewriting JavaScript on-the-fly",
     "dependencies" : {
-		"acorn": "*",
-		"escodegen": "*"
+		"esprima": "*",
+		"escodegen": "*",
+		"htmlparser": "*",
+		"htmlparser-to-html": "*",
+		"html-entities": "*"
     },
     "license": "Eclipse"
 }
