@@ -15,7 +15,8 @@ var http = require('http'),
     path = require('path'),
     fs = require('fs'),
     url = require('url'),
-    util = require('util');
+    acorn = require('acorn'),
+    escodegen = require('escodegen');
     
 if(process.argv.length <= 2) {
 	console.error("Usage: node proxy.js REWRITER");
@@ -54,7 +55,10 @@ http.createServer(function(request, response) {
 				var output;
 				try {
 					var file = path.basename(url_path);
-					output = rewriter.rewrite(buf, { type: 'script', url: request.url });
+					var ast = acorn.parse(buf, { locations: true, ranges: true, sourceFile: file });
+					output = rewriter.rewrite(ast, { type: 'script', url: request.url, source: buf });
+					if(typeof output === 'object')
+						output = escodegen.generate(output);
 					console.log("Successfully instrumented " + request.url);
 				} catch(e) {
 					console.warn("Couldn't parse " + request.url + " as JavaScript; passing on un-instrumented");

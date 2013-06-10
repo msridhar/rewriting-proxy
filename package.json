@@ -1,0 +1,11 @@
+{
+    "name": "rewriting-proxy",
+    "version": "0.1.0",
+    "author": "Max Schaefer <schaefer@ntu.edu.sg>",
+    "description": "Proxy for rewriting JavaScript on-the-fly",
+    "dependencies" : {
+		"acorn": "*",
+		"escodegen": "*"
+    },
+    "license": "Eclipse"
+}
