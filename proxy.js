@@ -23,7 +23,7 @@ if(process.argv.length <= 2) {
 	process.exit(-1);
 }
 
-var rewriter = require(process.argv[2]);
+var rewriter = require(path.resolve(__dirname, process.argv[2]));
 
 http.createServer(function(request, response) {
     var proxy = http.createClient(80, request.headers.host);
