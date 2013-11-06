@@ -2,10 +2,9 @@
     "name": "rewriting-proxy",
     "version": "0.1.0",
     "author": "Max Schaefer <schaefer@ntu.edu.sg>",
+    "author": "Manu Sridharan <m.sridharan@samsung.com>",
     "description": "Proxy for rewriting JavaScript on-the-fly",
     "dependencies" : {
-		"esprima": "*",
-		"escodegen": "*",
 		"htmlparser": "*",
 		"htmlparser-to-html": "*",
 		"html-entities": "*"
