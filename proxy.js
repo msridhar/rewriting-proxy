@@ -14,7 +14,6 @@
 
 var http = require('http'),
     path = require('path'),
-    fs = require('fs'),
     url = require('url'),
     htmlparser = require('htmlparser'),
     htmlparser2html = require('htmlparser-to-html'),
@@ -56,7 +55,7 @@ var url_attribute_names = [ "action", "cite", "code", "codebase", "data", "href"
 function walkDOM(node, url) {
 	var src, metadata;
 
-	if (node.name === 'head') {
+	if (node.name === 'head' && headerCode) {
 		// try sticking a script at the beginning
 		var newScript = {
 			raw: 'script',
