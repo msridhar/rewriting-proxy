@@ -108,7 +108,7 @@ function walkDOM(node, url) {
 	if(node.attribs) {
 		for(var attrib in node.attribs) {
 			if(node.attribs.hasOwnProperty(attrib)) {
-				if(event_handler_attribute_names.indexOf(attrib) !== -1) {
+				if(event_handler_attribute_names.indexOf(attrib.toLowerCase()) !== -1) {
 					src = entities.decode(String(node.attribs[attrib]));
 					metadata = { type: 'event-handler', url: url + "#event-handler-" + (event_handler_counter++) };
 					node.attribs[attrib] = entities.encode(rewriteScript(src, metadata));
@@ -131,6 +131,16 @@ function walkDOM(node, url) {
 
 var server = null;
 
+/**
+ * starts up the instrumenting proxy.
+ * @param options Specifies options for the proxy.  Required fields:
+ *  - options.headerCode: a String that includes code to be inserted as
+ *     an inline script at the beginning of any HTML file
+ *  - options.rewriter: a function that takes JS code as a string and some
+ *    additional metadata and returns the string instrumented code.  The
+ *    metadata object m includes fields:
+ *       - m.url: the URL of the JS code.  TODO describe URL scheme for inline scripts
+ */
 function start(options) {
 	headerCode = options.headerCode;
 	rewriteFunc = options.rewriter;
