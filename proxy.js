@@ -14,7 +14,7 @@
 
 var http = require('http'),
     path = require('path'),
-    url = require('url'),
+    urlparser = require('url'),
     htmlparser = require('htmlparser'),
     htmlparser2html = require('htmlparser-to-html'),
     Entities = require('html-entities').AllHtmlEntities;
@@ -23,11 +23,7 @@ var entities = new Entities();
     
 var unparseable_count = 0;
 
-var headerCode = null;
-
-var rewriteFunc = null;
-
-function rewriteScript(src, metadata) {
+function rewriteScript(src, metadata, rewriteFunc) {
 	var result;
 		
 	var prefix = "";
@@ -52,7 +48,7 @@ var event_handler_attribute_names = [ "onabort", "onblur", "onchange", "onclick"
 // attributes that may contain URLs (unsure whether all of these can actually contain 'javascript:' URLs)
 var url_attribute_names = [ "action", "cite", "code", "codebase", "data", "href", "manifest", "poster", "src" ];
 
-function walkDOM(node, url) {
+function walkDOM(node, url, rewriteFunc, headerCode) {
 	var src, metadata;
 
 	if (node.name === 'head' && headerCode) {
@@ -73,7 +69,7 @@ function walkDOM(node, url) {
 			// don't instrument the new script
 			node.children.forEach(function (ch) {
 				if (ch !== newScript) {
-					walkDOM(ch, url);
+					walkDOM(ch, url, rewriteFunc, headerCode);
 				}
 			});
 		} else {
@@ -99,7 +95,7 @@ function walkDOM(node, url) {
 				
 				node.children.length = 1;
 				node.children[0].type = 'text';
-				node.children[0].raw = node.children[0].data = rewriteScript(src, metadata);
+				node.children[0].raw = node.children[0].data = rewriteScript(src, metadata, rewriteFunc);
 			}
 		}
 	}
@@ -111,22 +107,36 @@ function walkDOM(node, url) {
 				if(event_handler_attribute_names.indexOf(attrib.toLowerCase()) !== -1) {
 					src = entities.decode(String(node.attribs[attrib]));
 					metadata = { type: 'event-handler', url: url + "#event-handler-" + (event_handler_counter++) };
-					node.attribs[attrib] = entities.encode(rewriteScript(src, metadata));
+					// since htmlparser2html does its own encoding of attribute values, here we 
+					// just remove newlines and leave the decoded version in the tree
+					var rewritten = rewriteScript(src, metadata, rewriteFunc).replace("\n", "");
+					node.attribs[attrib] = rewritten;
 				} else if(url_attribute_names.indexOf(attrib) !== -1 && String(node.attribs[attrib]).match(/^javascript:/i)) {
 					src = entities.decode(String(node.attribs[attrib]));
 					metadata = { type: 'javascript-url', url: url + "#js-url-" + (js_url_counter++) };
-					node.attribs[attrib] = entities.encode(rewriteScript(src, metadata));
+					node.attribs[attrib] = entities.encode(rewriteScript(src, metadata, rewriteFunc));
 				}
 			}
 		}
 	}
 	
 	if(node.type === 'tag' && node.children) {
-		node.children.forEach(function(ch) { walkDOM(ch, url); });
+		node.children.forEach(function(ch) { walkDOM(ch, url, rewriteFunc, headerCode); });
 	}
 	else if(Array.isArray(node)) {
-		node.forEach(function(ch) { walkDOM(ch, url); });
+		node.forEach(function(ch) { walkDOM(ch, url, rewriteFunc, headerCode); });
 	}
+}
+
+/**
+ * rewrite all the scripts in the given html string, using the rewriteFunc function
+ */
+function rewriteHTML(html, url, rewriteFunc, headerCode) {
+	var handler = new htmlparser.DefaultHandler();
+	var HTMLParser = new htmlparser.Parser(handler);
+	HTMLParser.parseComplete(html);
+	walkDOM(handler.dom, url, rewriteFunc, headerCode);
+	return htmlparser2html(handler.dom);
 }
 
 var server = null;
@@ -142,14 +152,12 @@ var server = null;
  *       - m.url: the URL of the JS code.  TODO describe URL scheme for inline scripts
  */
 function start(options) {
-	headerCode = options.headerCode;
-	rewriteFunc = options.rewriter;
 	server = http.createServer(function(request, response) {
 	    // make sure we won't get back gzipped stuff
 	    delete request.headers['accept-encoding'];
 		
 		console.log("request: " + request.url);
-		var parsed = url.parse(request.url);
+		var parsed = urlparser.parse(request.url);
 		var options = {
 			hostname: parsed.hostname,
 			path: parsed.path,
@@ -180,13 +188,9 @@ function start(options) {
 			proxy_response.on('end', function() {
 				var output;
 				if(tp === "JavaScript") {
-					output = rewriteScript(buf, { type: 'script', inline: false, url: request.url, source: buf });
+					output = rewriteScript(buf, { type: 'script', inline: false, url: request.url, source: buf }, options.rewriter);
 			    } else if(tp === "HTML") {
-					var handler = new htmlparser.DefaultHandler();
-					var HTMLParser = new htmlparser.Parser(handler);
-					HTMLParser.parseComplete(buf);
-					walkDOM(handler.dom, request.url);
-					output = htmlparser2html(handler.dom);
+			        output = rewriteHTML(buf, request.url, options.rewriter, options.headerCode);
 			    }
 			    
 			    if(output) {
@@ -219,3 +223,5 @@ function start(options) {
 }
 
 exports.start = start;
+exports.rewriteHTML = rewriteHTML;
+// TODO tabs to spaces
