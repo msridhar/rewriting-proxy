@@ -17,7 +17,9 @@ var http = require('http'),
     urlparser = require('url'),
     htmlparser = require('htmlparser'),
     htmlparser2html = require('htmlparser-to-html'),
-    Entities = require('html-entities').AllHtmlEntities;
+    Entities = require('html-entities').AllHtmlEntities,
+    assert = require("assert");
+    
 
 var entities = new Entities();
     
@@ -132,6 +134,7 @@ function walkDOM(node, url, rewriteFunc, headerCode) {
  * rewrite all the scripts in the given html string, using the rewriteFunc function
  */
 function rewriteHTML(html, url, rewriteFunc, headerCode) {
+	assert(rewriteFunc, "must pass a rewriting function");
 	var handler = new htmlparser.DefaultHandler();
 	var HTMLParser = new htmlparser.Parser(handler);
 	HTMLParser.parseComplete(html);
@@ -152,20 +155,23 @@ var server = null;
  *       - m.url: the URL of the JS code.  TODO describe URL scheme for inline scripts
  */
 function start(options) {
+	assert(options.rewriter, "must provide rewriter function in options.rewriter");
+	var headerCode = options.headerCode;
+	var rewriteFunc = options.rewriter;
 	server = http.createServer(function(request, response) {
 	    // make sure we won't get back gzipped stuff
 	    delete request.headers['accept-encoding'];
 		
 		console.log("request: " + request.url);
 		var parsed = urlparser.parse(request.url);
-		var options = {
+		var http_request_options = {
 			hostname: parsed.hostname,
 			path: parsed.path,
 			port: parsed.port ? parsed.port : 80,
 			method: request.method,
 			headers: request.headers
 		};
-		var proxyRequest = http.request(options, function(proxy_response) {
+		var proxyRequest = http.request(http_request_options, function(proxy_response) {
 			var tp = proxy_response.headers['content-type'] || "", buf = "";
 			var url_path = parsed.pathname;
 			
@@ -188,9 +194,9 @@ function start(options) {
 			proxy_response.on('end', function() {
 				var output;
 				if(tp === "JavaScript") {
-					output = rewriteScript(buf, { type: 'script', inline: false, url: request.url, source: buf }, options.rewriter);
+					output = rewriteScript(buf, { type: 'script', inline: false, url: request.url, source: buf }, rewriteFunc);
 			    } else if(tp === "HTML") {
-			        output = rewriteHTML(buf, request.url, options.rewriter, options.headerCode);
+			        output = rewriteHTML(buf, request.url, rewriteFunc, headerCode);
 			    }
 			    
 			    if(output) {
