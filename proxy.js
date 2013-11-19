@@ -33,8 +33,13 @@ function rewriteScript(src, metadata, rewriteFunc) {
 		prefix = src.substring(0, "javascript".length+1);
 		src = src.substring(prefix.length);
 	}
-	
-	result = rewriteFunc(src, metadata);		
+	try {
+		result = rewriteFunc(src, metadata);			
+	} catch (e) {
+		console.log("exception while rewriting script " + metadata.url);
+		console.log(e);
+		return src;
+	}
 	result = prefix+result;
 	return result;
 }

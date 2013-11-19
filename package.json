@@ -9,5 +9,6 @@
 		"htmlparser-to-html": "*",
 		"html-entities": "*"
     },
+    "scripts": {"test": "mocha" },
     "license": "Eclipse"
 }
