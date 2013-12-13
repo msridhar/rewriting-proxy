@@ -13,7 +13,7 @@
 /*jslint node: true */
 /*global describe it */
 var assert = require("assert");
-var proxy = require("../proxy");
+var proxy = require("../rewriting-proxy");
 describe('rewriting-proxy', function () {
 	describe('#rewriteHTML()', function () {
 		it('should do nothing', function () {

@@ -12,7 +12,7 @@
 
 /*jslint node: true */
 
-var proxy = require("./proxy");
+var proxy = require("rewriting-proxy");
 
 var options = {
 	rewriter: function (src, metadata) {

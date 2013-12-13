@@ -9,7 +9,7 @@ Usage
 
 From `proxy_example.js`:
 
-	var proxy = require("./proxy");
+	var proxy = require("rewriting-proxy");
 	
 	var options = {
 		rewriter: function (src, metadata) {
@@ -23,7 +23,7 @@ From `proxy_example.js`:
 	proxy.start(options);
 
 	
-The `proxy.start(options)` function starts the proxy server on `localhost`.  Possible options are:
+The `start(options)` function starts the proxy server on `localhost`.  Possible options are:
 
 * `rewriter`: A function for rewriting JavaScript code.  Any response with a MIME type suggesting JavaScript content
 is passed to `rewriter`.  The metadata object includes properties:
@@ -33,6 +33,9 @@ is passed to `rewriter`.  The metadata object includes properties:
     * `url`: A URL for the script; these are auto-generated for inline scripts, event handlers, etc.
 * `headerCode`: JavaScript source code to be injected at the beginning of any requested HTML file.
 * `port`: The port on which the proxy server should listen, default `8080`.
+
+The library also exposes a `rewriteHTML(html, url, rewriter, headerCode)` function that rewrites the inline scripts
+in a given `html` string with URL `url`, using the `rewriter` function and `headerCode` string as described above.
 
 Limitations
 -----------

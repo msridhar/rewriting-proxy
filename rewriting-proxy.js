@@ -145,12 +145,12 @@ function walkDOM(node, url, rewriteFunc, headerCode) {
 /**
  * rewrite all the scripts in the given html string, using the rewriteFunc function
  */
-function rewriteHTML(html, url, rewriteFunc, headerCode) {
-	assert(rewriteFunc, "must pass a rewriting function");
+function rewriteHTML(html, url, rewriter, headerCode) {
+	assert(rewriter, "must pass a rewriting function");
 	var handler = new htmlparser.DefaultHandler();
 	var HTMLParser = new htmlparser.Parser(handler);
 	HTMLParser.parseComplete(html);
-	walkDOM(handler.dom, url, rewriteFunc, headerCode);
+	walkDOM(handler.dom, url, rewriter, headerCode);
 	return htmlparser2html(handler.dom);
 }
 
