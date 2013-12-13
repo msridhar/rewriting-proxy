@@ -37,6 +37,8 @@ is passed to `rewriter`.  The metadata object includes properties:
 The library also exposes a `rewriteHTML(html, url, rewriter, headerCode)` function that rewrites the inline scripts
 in a given `html` string with URL `url`, using the `rewriter` function and `headerCode` string as described above.
 
+To see a real-world use of the library, look at [jalangi_proxy.js](https://github.com/SRA-SiliconValley/jalangi/blob/master/src/js/commands/jalangi_proxy.js) from the [Jalangi framework](https://github.com/SRA-SiliconValley/jalangi).
+
 Limitations
 -----------
 
