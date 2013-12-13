@@ -7,7 +7,7 @@ Simple proxy library for rewriting JavaScript on-the-fly.
 Usage
 -----
 
-From `proxy_example.js`:
+From `proxy-example.js`:
 
 	var proxy = require("rewriting-proxy");
 	
