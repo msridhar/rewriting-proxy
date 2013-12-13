@@ -1,5 +1,7 @@
 /*******************************************************************************
  * Copyright (c) 2013 Max Schaefer.
+ * Copyright (c) 2013 Samsung Information Systems America, Inc.
+ * 
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +9,7 @@
  *
  * Contributors:
  *     Max Schaefer - initial API and implementation
+ *     Manu Sridharan - refactoring and bug fixes
  *******************************************************************************/
 /*jslint node: true */
 /*global require console Buffer __dirname process*/
@@ -117,7 +120,7 @@ function walkDOM(node, url, rewriteFunc, headerCode) {
 					// just remove newlines and leave the decoded version in the tree
 					var rewritten = rewriteScript(src, metadata, rewriteFunc).replace("\n", "");
 					node.attribs[attrib] = rewritten;
-				} else if (url_attribute_names.indexOf(attrib) !== -1 && String(node.attribs[attrib]).match(/^javascript:/i)) {
+				} else if (url_attribute_names.indexOf(attrib.toLowerCase()) !== -1 && String(node.attribs[attrib]).match(/^javascript:/i)) {
 					src = entities.decode(String(node.attribs[attrib]));
 					metadata = {
 						type: 'javascript-url',
