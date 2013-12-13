@@ -4,6 +4,7 @@
     "author": "Max Schaefer <schaefer@ntu.edu.sg>",
     "author": "Manu Sridharan <m.sridharan@samsung.com>",
     "description": "Proxy for rewriting JavaScript on-the-fly",
+    "main": "rewriting-proxy.js",
     "dependencies" : {
 		"htmlparser": "*",
 		"htmlparser-to-html": "*",
