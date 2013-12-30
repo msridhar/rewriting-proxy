@@ -62,6 +62,10 @@ describe('rewriting-proxy', function () {
 		    var rewriter = function (src) { throw "I crashed"; };
 		    test_rewrite(input, input, rewriter);
 		});
+		it('should handle textarea properly', function () {
+			var input = "<html><head></head><body><textarea>for (i = 0; i < p; i++) {}</textarea></body></html>";
+			test_rewrite(input,input);
+		});
 
 	        it('should rewrite script tags without attributes', function() {
 		    var input = "<html><head></head><script>foo</script><body></body></html>";
