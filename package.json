@@ -1,14 +1,16 @@
 {
     "name": "rewriting-proxy",
-    "version": "0.1.0",
-    "author": "Max Schaefer <schaefer@ntu.edu.sg>",
-    "author": "Manu Sridharan <m.sridharan@samsung.com>",
+    "version": "0.2.0",
+    "contributors": [
+	{ "name": "Max Schaefer",
+	  "email": "xiemaisi@gmail.com" },
+	{ "name": "Manu Sridharan",
+	  "email": "m.sridharan@samsung.com" }
+    ],
     "description": "Proxy for rewriting JavaScript on-the-fly",
     "main": "rewriting-proxy.js",
     "dependencies" : {
-		"htmlparser": "*",
-		"htmlparser-to-html": "*",
-		"html-entities": "*"
+	"html5": "*"
     },
     "scripts": {"test": "mocha" },
     "license": "Eclipse"

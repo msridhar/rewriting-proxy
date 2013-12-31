@@ -14,13 +14,10 @@
 /*jslint node: true */
 /*global require console Buffer __dirname process*/
 var http = require('http'),
-	path = require('path'),
-	urlparser = require('url'),
-	htmlparser = require('htmlparser'),
-	htmlparser2html = require('htmlparser-to-html'),
-	Entities = require('html-entities').AllHtmlEntities,
-	assert = require("assert");
-var entities = new Entities();
+    path = require('path'),
+    urlparser = require('url'),
+    HTML5 = require('html5'),
+    assert = require("assert");
 var unparseable_count = 0;
 
 function rewriteScript(src, metadata, rewriteFunc) {
@@ -54,104 +51,71 @@ var event_handler_attribute_names = ["onabort", "onblur", "onchange", "onclick",
 var url_attribute_names = ["action", "cite", "code", "codebase", "data", "href", "manifest", "poster", "src"];
 
 function walkDOM(node, url, rewriteFunc, headerCode) {
-	var src, metadata;
-	if (node.name === 'head' && headerCode) {
-		// try sticking a script at the beginning
-		var newScript = {
-			raw: 'script',
-			data: 'script',
-			type: 'script',
-			name: 'script',
-			children: [{
-				type: 'text',
-				raw: headerCode,
-				data: headerCode
-			}]
-		};
-		if (node.children) {
-			node.children.unshift(newScript);
-			// don't instrument the new script
-			node.children.forEach(function (ch) {
-				if (ch !== newScript) {
-					walkDOM(ch, url, rewriteFunc, headerCode);
-				}
-			});
-		} else {
-			node.children = [newScript];
-		}
-		return;
-	}
+    var src, metadata;
+    var tagName = (node.tagName || "").toLowerCase();
+
+    if (tagName === 'head' && headerCode) {
+	// first, recursively process any child nodes
+	for (var ch=node.firstChild;ch;ch=ch.nextSibling)
+	    walkDOM(ch, url, rewriteFunc, headerCode);
+	// then, insert header code as first child
+	node.innerHTML = "<script>" + headerCode + "</script>" + node.innerHTML;
+	return;
+    } else if(tagName === 'script' && node.hasChildNodes()) {
 	// handle scripts (but skip empty ones)
-	if (node.children && node.type === 'script') {
-		// scripts without type are assumed to contain JavaScript
-		if (!node.attribs || !node.attribs.type || node.attribs.type.match(/JavaScript/i)) {
-			// only rewrite inline scripts; external scripts are handled by request rewriting
-			if (!node.attribs || !node.attribs.src) {
-				src = "";
-				for (var i = 0, n = node.children.length; i < n; ++i) {
-					if (node.children[i].type === 'text' || node.children[i].type === 'comment') {
-						src += node.children[i].raw;
-					} else {
-						throw new Error("script has child of type " + node.children[i].type + "; that's not supposed to happen");
-					}
-				}
-				metadata = {
-					type: 'script',
-					inline: true,
-					url: url + "#inline-" + (script_counter++)
-				};
-				node.children.length = 1;
-				node.children[0].type = 'text';
-				node.children[0].raw = node.children[0].data = rewriteScript(src, metadata, rewriteFunc);
-			}
-		}
+	// scripts without type are assumed to contain JavaScript
+	if (!node.getAttribute("type") || node.getAttribute("type").match(/JavaScript/i)) {
+	    // only rewrite inline scripts; external scripts are handled by request rewriting
+	    if (!node.getAttribute("src")) {
+		src = "";
+		for (var ch=node.firstChild;ch;ch=ch.nextSibling)
+		    src += ch.nodeValue;
+		metadata = {
+		    type: 'script',
+		    inline: true,
+		    url: url + "#inline-" + (script_counter++)
+		};
+		node.textContent = rewriteScript(src, metadata, rewriteFunc);
+	    }
 	}
+    } else if(node.nodeType === 1) {
 	// handle event handlers and 'javascript:' URLs
-	if (node.attribs) {
-		for (var attrib in node.attribs) {
-			if (node.attribs.hasOwnProperty(attrib)) {
-				if (event_handler_attribute_names.indexOf(attrib.toLowerCase()) !== -1) {
-					src = entities.decode(String(node.attribs[attrib]));
-					metadata = {
-						type: 'event-handler',
-						url: url + "#event-handler-" + (event_handler_counter++)
-					};
-					// since htmlparser2html does its own encoding of attribute values, here we 
-					// just remove newlines and leave the decoded version in the tree
-					var rewritten = rewriteScript(src, metadata, rewriteFunc).replace("\n", "");
-					node.attribs[attrib] = rewritten;
-				} else if (url_attribute_names.indexOf(attrib.toLowerCase()) !== -1 && String(node.attribs[attrib]).match(/^javascript:/i)) {
-					src = entities.decode(String(node.attribs[attrib]));
-					metadata = {
-						type: 'javascript-url',
-						url: url + "#js-url-" + (js_url_counter++)
-					};
-					node.attribs[attrib] = entities.encode(rewriteScript(src, metadata, rewriteFunc));
-				}
-			}
-		}
-	}
-	if (node.type === 'tag' && node.children) {
-		node.children.forEach(function (ch) {
-			walkDOM(ch, url, rewriteFunc, headerCode);
-		});
-	} else if (Array.isArray(node)) {
-		node.forEach(function (ch) {
-			walkDOM(ch, url, rewriteFunc, headerCode);
-		});
-	}
+	event_handler_attribute_names.forEach(function(attrib) {
+	    if (node.hasAttribute(attrib)) {
+		var src = node.getAttribute(attrib)+"";
+		metadata = {
+		    type: 'event-handler',
+		    url: url + "#event-handler-" + (event_handler_counter++)
+		};
+		node.setAttribute(attrib, rewriteScript(src, metadata, rewriteFunc));
+	    }
+	});
+	url_attribute_names.forEach(function(attrib) {
+	    var val = node.getAttribute(attrib)+"";
+	    if (val && val.match(/^javascript:/i)) {
+		metadata = {
+		    type: 'javascript-url',
+		    url: url + "#js-url-" + (js_url_counter++)
+		};
+		node.setAttribute(attrib, rewriteScript(val, metadata, rewriteFunc));
+	    }
+	});
+    }
+
+    if (node.childNodes && node.childNodes.length)
+	for (var i=0,n=node.childNodes.length;i<n;++i)
+	    walkDOM(node.childNodes[i], url, rewriteFunc, headerCode);
 }
 
 /**
  * rewrite all the scripts in the given html string, using the rewriteFunc function
  */
 function rewriteHTML(html, url, rewriter, headerCode) {
-	assert(rewriter, "must pass a rewriting function");
-	var handler = new htmlparser.DefaultHandler();
-	var HTMLParser = new htmlparser.Parser(handler);
-	HTMLParser.parseComplete(html);
-	walkDOM(handler.dom, url, rewriter, headerCode);
-	return htmlparser2html(handler.dom);
+    assert(rewriter, "must pass a rewriting function");
+    var parser = new HTML5.Parser();
+    parser.parse(html);
+    walkDOM(parser.document, url, rewriter, headerCode);
+    return parser.document.innerHTML;
 }
 
 var server = null;
