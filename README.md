@@ -3,6 +3,10 @@ rewriting-proxy
 
 Simple proxy library for rewriting JavaScript on-the-fly.
 
+Installation
+------------
+
+    npm install rewriting-proxy
 
 Usage
 -----
