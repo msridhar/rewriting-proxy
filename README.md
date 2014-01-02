@@ -18,6 +18,7 @@ From `proxy-example.js`:
 	var options = {
 		rewriter: function (src, metadata) {
 			console.log("instrumenting " + metadata.url);
+			// no instrumentation; just return original code
 			return src;		
 		},
 		headerCode: "alert(\"hi\");",
@@ -29,8 +30,7 @@ From `proxy-example.js`:
 	
 The `start(options)` function starts the proxy server on `localhost`.  Possible options are:
 
-* `rewriter`: A function for rewriting JavaScript code.  Any response with a MIME type suggesting JavaScript content
-is passed to `rewriter`.  The metadata object includes properties:
+* `rewriter`: A function that takes JavaScript code as its first parameter and returns the instrumented version of the code.  Any response with a MIME type suggesting JavaScript content is passed to `rewriter`. The metadata object passed as the second parameter includes properties:
     * `type`: the type of the script, either `'script'` for inline scripts or script files, `'event-handler'` for event
       handlers, or `'javascript-url'` for JavaScript URLs.
     * `inline`: For scripts of type `'script'`, indicates whether the script was inline.
