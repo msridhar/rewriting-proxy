@@ -10,7 +10,7 @@
     "description": "Proxy for rewriting JavaScript on-the-fly",
     "main": "rewriting-proxy.js",
     "dependencies" : {
-	"html5": "*"
+	"html5": "0.3.x"
     },
     "scripts": {"test": "mocha" },
     "license": "Eclipse"
