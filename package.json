@@ -13,5 +13,9 @@
 	"html5": "0.3.x"
     },
     "scripts": {"test": "mocha" },
-    "license": "Eclipse"
+    "license": "Eclipse",
+    "repository" : {
+      "type" : "git",
+      "url" : "https://github.com/xiemaisi/rewriting-proxy.git"
+    }
 }
