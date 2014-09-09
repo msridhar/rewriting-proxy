@@ -1,6 +1,6 @@
 {
     "name": "rewriting-proxy",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "contributors": [
 	{ "name": "Max Schaefer",
 	  "email": "xiemaisi@gmail.com" },
