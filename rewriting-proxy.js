@@ -50,17 +50,28 @@ var event_handler_attribute_names = ["onabort", "onblur", "onchange", "onclick",
 // attributes that may contain URLs (unsure whether all of these can actually contain 'javascript:' URLs)
 var url_attribute_names = ["action", "cite", "code", "codebase", "data", "href", "manifest", "poster", "src"];
 
-function walkDOM(node, url, rewriteFunc, headerCode) {
+function walkDOM(node, url, rewriteFunc, headerCode, headerURLs) {
     var src, metadata;
     var tagName = (node.tagName || "").toLowerCase();
-
-    if (tagName === 'head' && headerCode) {
-	// first, recursively process any child nodes
-	for (var ch=node.firstChild;ch;ch=ch.nextSibling)
-	    walkDOM(ch, url, rewriteFunc, headerCode);
-	// then, insert header code as first child
-	node.innerHTML = "<script>" + headerCode + "</script>" + node.innerHTML;
-	return;
+    if (tagName === 'head' && (headerCode || headerURLs)) {
+        // first, recursively process any child nodes
+        for (var ch=node.firstChild;ch;ch=ch.nextSibling) {
+            walkDOM(ch, url, rewriteFunc, headerCode, headerURLs);
+        }
+        // then, insert header code as first child
+        var innerHTML = node.innerHTML;
+        if (headerCode) {
+            innerHTML = "<script>" + headerCode + "</script>" + innerHTML;
+        }
+        if (headerURLs) {
+            var urlTags = "";
+            for (var i = 0; i < headerURLs.length; i++) {
+                urlTags += "<script src=\"" + headerURLs[i] + "\"></script>";
+            }
+            innerHTML = urlTags + innerHTML;
+        }
+        node.innerHTML = innerHTML;
+        return;
     } else if(tagName === 'script' && node.hasChildNodes()) {
 	// handle scripts (but skip empty ones)
 	// scripts without type are assumed to contain JavaScript
@@ -104,17 +115,17 @@ function walkDOM(node, url, rewriteFunc, headerCode) {
 
     if (node.childNodes && node.childNodes.length)
 	for (var i=0,n=node.childNodes.length;i<n;++i)
-	    walkDOM(node.childNodes[i], url, rewriteFunc, headerCode);
+	    walkDOM(node.childNodes[i], url, rewriteFunc, headerCode, headerURLs);
 }
 
 /**
  * rewrite all the scripts in the given html string, using the rewriteFunc function
  */
-function rewriteHTML(html, url, rewriter, headerCode) {
+function rewriteHTML(html, url, rewriter, headerCode, headerURLs) {
     assert(rewriter, "must pass a rewriting function");
     var parser = new HTML5.Parser();
     parser.parse(html);
-    walkDOM(parser.document, url, rewriter, headerCode);
+    walkDOM(parser.document, url, rewriter, headerCode, headerURLs);
     return parser.document.innerHTML;
 }
 
@@ -123,21 +134,40 @@ var server = null;
 /**
  * starts up the instrumenting proxy.
  * @param options Specifies options for the proxy.  Required fields:
- *  - options.headerCode: a String that includes code to be inserted as
- *     an inline script at the beginning of any HTML file
  *  - options.rewriter: a function that takes JS code as a string and some
  *    additional metadata and returns the string instrumented code.  The
  *    metadata object m includes fields:
  *       - m.url: the URL of the JS code.  TODO describe URL scheme for inline scripts
+ *  Optional fields:
+ *  - options.headerCode: a String that includes code to be inserted as
+ *     an inline script at the beginning of any HTML file
+ *  - options.headerURLs: an Array of script URLs.  These URLs will be loaded
+ *  via <script> tags at the beginning of any HTML file.
+ *  - options.intercept: a function that takes a URL string from a request and returns
+ *  JavaScript code for the response, or null if the request should be forwarded to the
+ *  remote server.
  */
 function start(options) {
 	assert(options.rewriter, "must provide rewriter function in options.rewriter");
 	var headerCode = options.headerCode;
+    var headerURLs = options.headerURLs;
 	var rewriteFunc = options.rewriter;
+    var intercept = options.intercept;
 	server = http.createServer(function (request, response) {
 		// make sure we won't get back gzipped stuff
 		delete request.headers['accept-encoding'];
-		console.log("request: " + request.url);
+        console.log("request: " + request.url);
+        var interceptScript = intercept(request.url);
+        if (interceptScript) {
+            // send the script back directly
+            var iceptHeaders = {
+                'content-type': 'application/javascript',
+                'content-length': Buffer.byteLength(interceptScript, 'utf-8')
+            };
+            response.writeHead(200, iceptHeaders);
+            response.write(interceptScript);
+            response.end();
+        }
 		var parsed = urlparser.parse(request.url);
 		var http_request_options = {
 			hostname: parsed.hostname,
@@ -174,7 +204,7 @@ function start(options) {
 						source: buf
 					}, rewriteFunc);
 				} else if (tp === "HTML") {
-					output = rewriteHTML(buf, request.url, rewriteFunc, headerCode);
+					output = rewriteHTML(buf, request.url, rewriteFunc, headerCode, headerURLs);
 				}
 				if (output) {
 					proxy_response.headers['content-length'] = Buffer.byteLength(output, 'utf-8');
@@ -199,7 +229,6 @@ function start(options) {
 	});
 	var port = options.port ? options.port : 8080;
 	server.listen(port);
-	console.log("listening on port " + port);
 }
 exports.start = start;
 exports.rewriteHTML = rewriteHTML;
