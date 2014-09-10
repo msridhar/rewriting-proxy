@@ -12,18 +12,24 @@
 
 /*jslint node: true */
 /*global describe it */
-var assert = require("assert"),
-    HTML5 = require("html5");
+var assert = require("assert");
 var proxy = require("../rewriting-proxy");
+
+var HTML5 = require('html5');
+var jsdom = require('jsdom');
+var core = jsdom.browserAugmentation(jsdom.level(3));
+
+var impl = new core.DOMImplementation();
 
 // constants used by several tests
 var empty_doc = "<html><head></head><body></body></html>";
 
 // parse and pretty-print the given HTML
 function normalise(html) {
-    var parser = new HTML5.Parser();
+    var document = impl.createDocument();
+    var parser = new HTML5.JSDOMParser(document, core);
     parser.parse(html);
-    return parser.document.innerHTML;
+    return document.innerHTML;
 }
 
 // utility function for writing tests

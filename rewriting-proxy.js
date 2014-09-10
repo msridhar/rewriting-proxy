@@ -17,7 +17,13 @@ var http = require('http'),
     path = require('path'),
     urlparser = require('url'),
     HTML5 = require('html5'),
+    jsdom = require('jsdom'),
     assert = require("assert");
+
+var core = jsdom.browserAugmentation(jsdom.level(3));
+
+var impl = new core.DOMImplementation();
+
 var unparseable_count = 0;
 
 function rewriteScript(src, metadata, rewriteFunc) {
@@ -123,10 +129,11 @@ function walkDOM(node, url, rewriteFunc, headerCode, headerURLs) {
  */
 function rewriteHTML(html, url, rewriter, headerCode, headerURLs) {
     assert(rewriter, "must pass a rewriting function");
-    var parser = new HTML5.Parser();
+    var document = impl.createDocument();
+    var parser = new HTML5.JSDOMParser(document, core);
     parser.parse(html);
-    walkDOM(parser.document, url, rewriter, headerCode, headerURLs);
-    return parser.document.innerHTML;
+    walkDOM(document, url, rewriter, headerCode, headerURLs);
+    return document.innerHTML;
 }
 
 var server = null;
