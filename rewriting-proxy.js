@@ -150,6 +150,8 @@ var server = null;
  *     an inline script at the beginning of any HTML file
  *  - options.headerURLs: an Array of script URLs.  These URLs will be loaded
  *  via <script> tags at the beginning of any HTML file.
+ *  - options.noInstRegExp: a RegExp to match against URLs; if the URL matches, no
+ *  instrumentation or rewriting will be done
  *  - options.intercept: a function that takes a URL string from a request and returns
  *  JavaScript code for the response, or null if the request should be forwarded to the
  *  remote server.
@@ -160,6 +162,7 @@ function start(options) {
     var headerURLs = options.headerURLs;
 	var rewriteFunc = options.rewriter;
     var intercept = options.intercept;
+    var noInstRegExp = options.noInstRegExp;
 	server = http.createServer(function (request, response) {
 		// make sure we won't get back gzipped stuff
 		delete request.headers['accept-encoding'];
@@ -174,7 +177,9 @@ function start(options) {
             response.writeHead(200, iceptHeaders);
             response.write(interceptScript);
             response.end();
+            return;
         }
+        var noInst = noInstRegExp && noInstRegExp.test(request.url);
 		var parsed = urlparser.parse(request.url);
 		var http_request_options = {
 			hostname: parsed.hostname,
@@ -187,7 +192,9 @@ function start(options) {
 			var tp = proxy_response.headers['content-type'] || "",
 				buf = "";
 			var url_path = parsed.pathname;
-			if (tp.match(/JavaScript/i) || tp.match(/text/i) && url_path.match(/\.js$/i)) {
+            if (noInst) {
+                tp = "other";
+            } else if (tp.match(/JavaScript/i) || tp.match(/text/i) && url_path.match(/\.js$/i)) {
 				tp = "JavaScript";
 			} else if (tp.match(/HTML/i)) {
 				tp = "HTML";
