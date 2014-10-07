@@ -167,17 +167,19 @@ function start(options) {
 		// make sure we won't get back gzipped stuff
 		delete request.headers['accept-encoding'];
         console.log("request: " + request.url);
-        var interceptScript = intercept(request.url);
-        if (interceptScript) {
-            // send the script back directly
-            var iceptHeaders = {
-                'content-type': 'application/javascript',
-                'content-length': Buffer.byteLength(interceptScript, 'utf-8')
-            };
-            response.writeHead(200, iceptHeaders);
-            response.write(interceptScript);
-            response.end();
-            return;
+        if (intercept) {
+            var interceptScript = intercept(request.url);
+            if (interceptScript) {
+                // send the script back directly
+                var iceptHeaders = {
+                    'content-type': 'application/javascript',
+                    'content-length': Buffer.byteLength(interceptScript, 'utf-8')
+                };
+                response.writeHead(200, iceptHeaders);
+                response.write(interceptScript);
+                response.end();
+                return;
+            }
         }
         var noInst = noInstRegExp && noInstRegExp.test(request.url);
 		var parsed = urlparser.parse(request.url);
