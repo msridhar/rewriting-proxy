@@ -46,12 +46,12 @@ describe('rewriting-proxy', function () {
 		    test_rewrite(empty_doc, empty_doc);
 		});
 		it('should insert header script', function () {
-		    var header = "alert(\"hi\");";
+		    var header = "<script>alert(\"hi\");</script>";
 		    var expected = "<html><head><script>alert(\"hi\");</script></head><body></body></html>";
 		    test_rewrite(empty_doc, expected, null, header);
 		});
 		it('should not rewrite header script', function () {
-		    var header = "alert(\"hi\");";
+		    var header = "<script>alert(\"hi\");</script>";
 		    var expected = "<html><head><script>alert(\"hi\");</script></head><body></body></html>";
 		    test_rewrite(empty_doc, expected, function() { return "bar"; }, header);
 		});

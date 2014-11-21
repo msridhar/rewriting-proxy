@@ -19,7 +19,7 @@ var options = {
 		console.log("instrumenting " + metadata.url);
 		return src;		
 	},
-	headerCode: "alert(\"hi\");",
+	headerHTML: "<script>alert(\"hi\");</script>",
 	port: 8080
 };
 

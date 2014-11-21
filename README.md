@@ -21,7 +21,7 @@ From `proxy-example.js`:
 			// no instrumentation; just return original code
 			return src;		
 		},
-		headerCode: "alert(\"hi\");",
+		headerHTML: "<script>alert(\"hi\");</script>",
 		port: 8080
 	};
 	
@@ -35,11 +35,16 @@ The `start(options)` function starts the proxy server on `localhost`.  Possible 
       handlers, or `'javascript-url'` for JavaScript URLs.
     * `inline`: For scripts of type `'script'`, indicates whether the script was inline.
     * `url`: A URL for the script; these are auto-generated for inline scripts, event handlers, etc.
-* `headerCode`: JavaScript source code to be injected at the beginning of any requested HTML file.
+* `headerHTML`: HTML string to be injected at the beginning of any
+requested HTML file.
+* `headerURLs`: an Array of script URLs.  These URLs will be loaded
+ *  via <script> tags at the beginning of any HTML file.
 * `port`: The port on which the proxy server should listen, default `8080`.
 
-The library also exposes a `rewriteHTML(html, url, rewriter, headerCode)` function that rewrites the inline scripts
-in a given `html` string with URL `url`, using the `rewriter` function and `headerCode` string as described above.
+The library also exposes a `rewriteHTML(html, url, rewriter,
+headerHTML, headerURLs)` function that rewrites the inline scripts
+in a given `html` string with URL `url`, using the `rewriter`
+function, `headerHTML` string and `headerURLs` array as described above.
 
 To see a real-world use of the library, look at [jalangi_proxy.js](https://github.com/SRA-SiliconValley/jalangi/blob/master/src/js/commands/jalangi_proxy.js) from the [Jalangi framework](https://github.com/SRA-SiliconValley/jalangi).
 

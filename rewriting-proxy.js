@@ -56,18 +56,18 @@ var event_handler_attribute_names = ["onabort", "onblur", "onchange", "onclick",
 // attributes that may contain URLs (unsure whether all of these can actually contain 'javascript:' URLs)
 var url_attribute_names = ["action", "cite", "code", "codebase", "data", "href", "manifest", "poster", "src"];
 
-function walkDOM(node, url, rewriteFunc, headerCode, headerURLs) {
+function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs) {
     var src, metadata;
     var tagName = (node.tagName || "").toLowerCase();
-    if (tagName === 'head' && (headerCode || headerURLs)) {
+    if (tagName === 'head' && (headerHTML || headerURLs)) {
         // first, recursively process any child nodes
         for (var ch=node.firstChild;ch;ch=ch.nextSibling) {
-            walkDOM(ch, url, rewriteFunc, headerCode, headerURLs);
+            walkDOM(ch, url, rewriteFunc, headerHTML, headerURLs);
         }
         // then, insert header code as first child
         var innerHTML = node.innerHTML;
-        if (headerCode) {
-            innerHTML = "<script>" + headerCode + "</script>" + innerHTML;
+        if (headerHTML) {
+            innerHTML = headerHTML + innerHTML;
         }
         if (headerURLs) {
             var urlTags = "";
@@ -121,18 +121,26 @@ function walkDOM(node, url, rewriteFunc, headerCode, headerURLs) {
 
     if (node.childNodes && node.childNodes.length)
 	for (var i=0,n=node.childNodes.length;i<n;++i)
-	    walkDOM(node.childNodes[i], url, rewriteFunc, headerCode, headerURLs);
+	    walkDOM(node.childNodes[i], url, rewriteFunc, headerHTML, headerURLs);
 }
 
 /**
- * rewrite all the scripts in the given html string, using the rewriteFunc function
+ * rewrite all the scripts in an HTML string
+ * @param html the original HTML
+ * @param url the URL for the HTML.  if none, just pass in ""
+ * @param rewriter a callback function invoked to instrument JS code.  for further details, see start() docs
+ * @param headerHTML a String of HTML to be inserted just after the <head> tag
+ *  in any HTML
+ * @param headerURLs an Array of script URLs.  These URLs will be loaded
+ *  via <script> tags at the beginning of any HTML file.
+ * @returns {string} the instrumented HTML
  */
-function rewriteHTML(html, url, rewriter, headerCode, headerURLs) {
+function rewriteHTML(html, url, rewriter, headerHTML, headerURLs) {
     assert(rewriter, "must pass a rewriting function");
     var document = impl.createDocument();
     var parser = new HTML5.JSDOMParser(document, core);
     parser.parse(html);
-    walkDOM(document, url, rewriter, headerCode, headerURLs);
+    walkDOM(document, url, rewriter, headerHTML, headerURLs);
     return document.innerHTML;
 }
 
@@ -144,10 +152,16 @@ var server = null;
  *  - options.rewriter: a function that takes JS code as a string and some
  *    additional metadata and returns the string instrumented code.  The
  *    metadata object m includes fields:
- *       - m.url: the URL of the JS code.  TODO describe URL scheme for inline scripts
+ *       - m.url: the URL of the JS code.  For inline scripts, we append
+ *                '#inline-x' for a regular inline script, '#event-handler-x'
+ *                for an event handler, or '#js-url-x' for a "javascript:" URL
+ *                script, with x being a unique identifier
+ *       - m.type: 'script' for regular scripts (inline or external),
+ *                 'event-handler' for inline event handler script,
+ *                 'javascript-url' for inline script in a "javascript:" URL
  *  Optional fields:
- *  - options.headerCode: a String that includes code to be inserted as
- *     an inline script at the beginning of any HTML file
+ *  - options.headerHTML: a String of HTML to be inserted just after the <head> tag
+ *  in any HTML
  *  - options.headerURLs: an Array of script URLs.  These URLs will be loaded
  *  via <script> tags at the beginning of any HTML file.
  *  - options.noInstRegExp: a RegExp to match against URLs; if the URL matches, no
@@ -158,7 +172,7 @@ var server = null;
  */
 function start(options) {
 	assert(options.rewriter, "must provide rewriter function in options.rewriter");
-	var headerCode = options.headerCode;
+	var headerHTML = options.headerHTML;
     var headerURLs = options.headerURLs;
 	var rewriteFunc = options.rewriter;
     var intercept = options.intercept;
@@ -220,7 +234,7 @@ function start(options) {
 						source: buf
 					}, rewriteFunc);
 				} else if (tp === "HTML") {
-					output = rewriteHTML(buf, request.url, rewriteFunc, headerCode, headerURLs);
+					output = rewriteHTML(buf, request.url, rewriteFunc, headerHTML, headerURLs);
 				}
 				if (output) {
 					proxy_response.headers['content-length'] = Buffer.byteLength(output, 'utf-8');
