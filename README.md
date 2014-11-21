@@ -38,7 +38,7 @@ The `start(options)` function starts the proxy server on `localhost`.  Possible 
 * `headerHTML`: HTML string to be injected at the beginning of any
 requested HTML file.
 * `headerURLs`: an Array of script URLs.  These URLs will be loaded
- *  via <script> tags at the beginning of any HTML file.
+  via `<script>` tags at the beginning of any HTML file. 
 * `port`: The port on which the proxy server should listen, default `8080`.
 
 The library also exposes a `rewriteHTML(html, url, rewriter,
