@@ -139,5 +139,11 @@ describe('rewriting-proxy', function () {
             var expected = "<html><head><script src=\"foo/baz.js\"></script><script src=\"fizz/bizz.js\"></script></head><body></body></html>";
             test_rewrite(empty_doc, expected, null, header, headerURLs);
         });
+        it('should not encode header HTML', function () {
+            var headerHTML = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"><script type="text/javascript"> var x="hello";</script>';
+            var expected = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><script type="text/javascript"> var x="hello";</script></head><body></body></html>';
+            test_rewrite(empty_doc, expected, null, headerHTML);
+
+        });
 	});
 });
