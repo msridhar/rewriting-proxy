@@ -16,13 +16,8 @@
 var http = require('http'),
     path = require('path'),
     urlparser = require('url'),
-    HTML5 = require('html5'),
     jsdom = require('jsdom'),
     assert = require("assert");
-
-var core = jsdom.browserAugmentation(jsdom.level(3));
-
-var impl = new core.DOMImplementation();
 
 var unparseable_count = 0;
 
@@ -137,9 +132,12 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs) {
  */
 function rewriteHTML(html, url, rewriter, headerHTML, headerURLs) {
     assert(rewriter, "must pass a rewriting function");
-    var document = impl.createDocument();
-    var parser = new HTML5.JSDOMParser(document, core);
-    parser.parse(html);
+    var document = jsdom.jsdom(html, {
+		features: {
+			FetchExternalResources: false,
+			ProcessExternalResources: false
+		}
+	});
     walkDOM(document, url, rewriter, headerHTML, headerURLs);
     return document.innerHTML;
 }

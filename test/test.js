@@ -15,20 +15,19 @@
 var assert = require("assert");
 var proxy = require("../rewriting-proxy");
 
-var HTML5 = require('html5');
 var jsdom = require('jsdom');
-var core = jsdom.browserAugmentation(jsdom.level(3));
-
-var impl = new core.DOMImplementation();
 
 // constants used by several tests
 var empty_doc = "<html><head></head><body></body></html>";
 
 // parse and pretty-print the given HTML
 function normalise(html) {
-    var document = impl.createDocument();
-    var parser = new HTML5.JSDOMParser(document, core);
-    parser.parse(html);
+    var document = jsdom.jsdom(html, {
+        features: {
+            FetchExternalResources: false,
+            ProcessExternalResources: false
+        }
+    });
     return document.innerHTML;
 }
 
