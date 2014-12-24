@@ -139,7 +139,7 @@ function rewriteHTML(html, url, rewriter, headerHTML, headerURLs) {
 		}
 	});
     walkDOM(document, url, rewriter, headerHTML, headerURLs);
-    return document.innerHTML;
+    return document.documentElement.outerHTML;
 }
 
 var server = null;

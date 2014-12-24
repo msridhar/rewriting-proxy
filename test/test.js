@@ -28,7 +28,7 @@ function normalise(html) {
             ProcessExternalResources: false
         }
     });
-    return document.innerHTML;
+    return document.documentElement.outerHTML;
 }
 
 // utility function for writing tests
