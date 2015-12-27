@@ -23,6 +23,6 @@
     "license": "Eclipse",
     "repository" : {
         "type" : "git",
-        "url" : "https://github.com/xiemaisi/rewriting-proxy.git"
+        "url" : "https://github.com/msridhar/rewriting-proxy.git"
     }
 }
