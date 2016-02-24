@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Copyright (c) 2013 Max Schaefer.
  * Copyright (c) 2013 Samsung Information Systems America, Inc.
- * 
+ *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,31 +22,31 @@ var http = require('http'),
 var unparseable_count = 0;
 
 function rewriteScript(src, metadata, rewriteFunc) {
-	var result;
-	var prefix = "";
-	if (src.match(/^javascript:/i)) {
-		prefix = src.substring(0, "javascript".length + 1);
-		src = src.substring(prefix.length);
-	}
-	try {
-		result = rewriteFunc(src, metadata);
-	} catch (e) {
-		console.log("exception while rewriting script " + metadata.url);
-		console.log(e);
-		return src;
-	}
-	result = prefix + result;
-	return result;
+    var result;
+    var prefix = "";
+    if (src.match(/^javascript:/i)) {
+        prefix = src.substring(0, "javascript".length + 1);
+        src = src.substring(prefix.length);
+    }
+    try {
+        result = rewriteFunc(src, metadata);
+    } catch (e) {
+        console.log("exception while rewriting script " + metadata.url);
+        console.log(e);
+        return src;
+    }
+    result = prefix + result;
+    return result;
 }
 
 var script_counter = 0,
-	event_handler_counter = 0,
-	js_url_counter = 0;
+    event_handler_counter = 0,
+    js_url_counter = 0;
 // event handler attributes
 var event_handler_attribute_names = ["onabort", "onblur", "onchange", "onclick", "ondblclick",
-	"onerror", "onfocus", "onkeydown", "onkeypress", "onkeyup",
-	"onload", "onmousedown", "onmousemove", "onmouseout", "onmouseover",
-	"onmouseup", "onreset", "onresize", "onselect", "onsubmit", "onunload"
+    "onerror", "onfocus", "onkeydown", "onkeypress", "onkeyup",
+    "onload", "onmousedown", "onmousemove", "onmouseout", "onmouseover",
+    "onmouseup", "onreset", "onresize", "onselect", "onsubmit", "onunload"
 ];
 // attributes that may contain URLs (unsure whether all of these can actually contain 'javascript:' URLs)
 var url_attribute_names = ["action", "cite", "code", "codebase", "data", "href", "manifest", "poster", "src"];
@@ -56,7 +56,7 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs) {
     var tagName = (node.tagName || "").toLowerCase();
     if (tagName === 'head' && (headerHTML || headerURLs)) {
         // first, recursively process any child nodes
-        for (var ch=node.firstChild;ch;ch=ch.nextSibling) {
+        for (var ch = node.firstChild; ch; ch = ch.nextSibling) {
             walkDOM(ch, url, rewriteFunc, headerHTML, headerURLs);
         }
         // then, insert header code as first child
@@ -73,50 +73,50 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs) {
         }
         node.innerHTML = innerHTML;
         return;
-    } else if(tagName === 'script' && node.hasChildNodes()) {
-	// handle scripts (but skip empty ones)
-	// scripts without type are assumed to contain JavaScript
-	if (!node.getAttribute("type") || node.getAttribute("type").match(/JavaScript/i)) {
-	    // only rewrite inline scripts; external scripts are handled by request rewriting
-	    if (!node.getAttribute("src")) {
-		src = "";
-		for (var ch=node.firstChild;ch;ch=ch.nextSibling)
-		    src += ch.nodeValue;
-		metadata = {
-		    type: 'script',
-		    inline: true,
-		    url: url + "#inline-" + (script_counter++)
-		};
-		node.textContent = rewriteScript(src, metadata, rewriteFunc);
-	    }
-	}
-    } else if(node.nodeType === 1) {
-	// handle event handlers and 'javascript:' URLs
-	event_handler_attribute_names.forEach(function(attrib) {
-	    if (node.hasAttribute(attrib)) {
-		var src = node.getAttribute(attrib)+"";
-		metadata = {
-		    type: 'event-handler',
-		    url: url + "#event-handler-" + (event_handler_counter++)
-		};
-		node.setAttribute(attrib, rewriteScript(src, metadata, rewriteFunc));
-	    }
-	});
-	url_attribute_names.forEach(function(attrib) {
-	    var val = node.getAttribute(attrib)+"";
-	    if (val && val.match(/^javascript:/i)) {
-		metadata = {
-		    type: 'javascript-url',
-		    url: url + "#js-url-" + (js_url_counter++)
-		};
-		node.setAttribute(attrib, rewriteScript(val, metadata, rewriteFunc));
-	    }
-	});
+    } else if (tagName === 'script' && node.hasChildNodes()) {
+        // handle scripts (but skip empty ones)
+        // scripts without type are assumed to contain JavaScript
+        if (!node.getAttribute("type") || node.getAttribute("type").match(/JavaScript/i)) {
+            // only rewrite inline scripts; external scripts are handled by request rewriting
+            if (!node.getAttribute("src")) {
+                src = "";
+                for (var ch = node.firstChild; ch; ch = ch.nextSibling)
+                    src += ch.nodeValue;
+                metadata = {
+                    type: 'script',
+                    inline: true,
+                    url: url + "#inline-" + (script_counter++)
+                };
+                node.textContent = rewriteScript(src, metadata, rewriteFunc);
+            }
+        }
+    } else if (node.nodeType === 1) {
+        // handle event handlers and 'javascript:' URLs
+        event_handler_attribute_names.forEach(function (attrib) {
+            if (node.hasAttribute(attrib)) {
+                var src = node.getAttribute(attrib) + "";
+                metadata = {
+                    type: 'event-handler',
+                    url: url + "#event-handler-" + (event_handler_counter++)
+                };
+                node.setAttribute(attrib, rewriteScript(src, metadata, rewriteFunc));
+            }
+        });
+        url_attribute_names.forEach(function (attrib) {
+            var val = node.getAttribute(attrib) + "";
+            if (val && val.match(/^javascript:/i)) {
+                metadata = {
+                    type: 'javascript-url',
+                    url: url + "#js-url-" + (js_url_counter++)
+                };
+                node.setAttribute(attrib, rewriteScript(val, metadata, rewriteFunc));
+            }
+        });
     }
 
     if (node.childNodes && node.childNodes.length)
-	for (var i=0,n=node.childNodes.length;i<n;++i)
-	    walkDOM(node.childNodes[i], url, rewriteFunc, headerHTML, headerURLs);
+        for (var i = 0, n = node.childNodes.length; i < n; ++i)
+            walkDOM(node.childNodes[i], url, rewriteFunc, headerHTML, headerURLs);
 }
 
 /**
@@ -133,11 +133,11 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs) {
 function rewriteHTML(html, url, rewriter, headerHTML, headerURLs) {
     assert(rewriter, "must pass a rewriting function");
     var document = jsdom.jsdom(html, {
-		features: {
-			FetchExternalResources: false,
-			ProcessExternalResources: false
-		}
-	});
+        features: {
+            FetchExternalResources: false,
+            ProcessExternalResources: false
+        }
+    });
     walkDOM(document, url, rewriter, headerHTML, headerURLs);
     return document.documentElement.outerHTML;
 }
@@ -169,15 +169,15 @@ var server = null;
  *  remote server.
  */
 function start(options) {
-	assert(options.rewriter, "must provide rewriter function in options.rewriter");
-	var headerHTML = options.headerHTML;
+    assert(options.rewriter, "must provide rewriter function in options.rewriter");
+    var headerHTML = options.headerHTML;
     var headerURLs = options.headerURLs;
-	var rewriteFunc = options.rewriter;
+    var rewriteFunc = options.rewriter;
     var intercept = options.intercept;
     var noInstRegExp = options.noInstRegExp;
-	server = http.createServer(function (request, response) {
-		// make sure we won't get back gzipped stuff
-		delete request.headers['accept-encoding'];
+    server = http.createServer(function (request, response) {
+        // make sure we won't get back gzipped stuff
+        delete request.headers['accept-encoding'];
         console.log("request: " + request.url);
         if (intercept) {
             var interceptScript = intercept(request.url);
@@ -194,69 +194,69 @@ function start(options) {
             }
         }
         var noInst = noInstRegExp && noInstRegExp.test(request.url);
-		var parsed = urlparser.parse(request.url);
-		var http_request_options = {
-			hostname: parsed.hostname,
-			path: parsed.path,
-			port: parsed.port ? parsed.port : 80,
-			method: request.method,
-			headers: request.headers
-		};
-		var proxyRequest = http.request(http_request_options, function (proxy_response) {
-			var tp = proxy_response.headers['content-type'] || "",
-				buf = "";
-			var url_path = parsed.pathname;
+        var parsed = urlparser.parse(request.url);
+        var http_request_options = {
+            hostname: parsed.hostname,
+            path: parsed.path,
+            port: parsed.port ? parsed.port : 80,
+            method: request.method,
+            headers: request.headers
+        };
+        var proxyRequest = http.request(http_request_options, function (proxy_response) {
+            var tp = proxy_response.headers['content-type'] || "",
+                buf = "";
+            var url_path = parsed.pathname;
             if (noInst) {
                 tp = "other";
             } else if (tp.match(/JavaScript/i) || tp.match(/text/i) && url_path.match(/\.js$/i)) {
-				tp = "JavaScript";
-			} else if (tp.match(/HTML/i)) {
-				tp = "HTML";
-			} else {
-				tp = "other";
-			}
-			proxy_response.on('data', function (chunk) {
-				if (tp === "other") {
-					response.write(chunk, 'binary');
-				} else {
-					buf += chunk.toString();
-				}
-			});
-			proxy_response.on('end', function () {
-				var output;
-				if (tp === "JavaScript") {
-					output = rewriteScript(buf, {
-						type: 'script',
-						inline: false,
-						url: request.url,
-						source: buf
-					}, rewriteFunc);
-				} else if (tp === "HTML") {
-					output = rewriteHTML(buf, request.url, rewriteFunc, headerHTML, headerURLs);
-				}
-				if (output) {
-					proxy_response.headers['content-length'] = Buffer.byteLength(output, 'utf-8');
-					response.writeHead(proxy_response.statusCode, proxy_response.headers);
-					response.write(output);
-				}
-				response.end();
-			});
-			if (tp === "other") {
-				response.writeHead(proxy_response.statusCode, proxy_response.headers);
-			}
-		});
-		proxyRequest.on('error', function (e) {
-			console.log("request error " + e.message);
-		});
-		request.on('data', function (chunk) {
-			proxyRequest.write(chunk, 'binary');
-		});
-		request.on('end', function () {
-			proxyRequest.end();
-		});
-	});
-	var port = options.port ? options.port : 8080;
-	server.listen(port);
+                tp = "JavaScript";
+            } else if (tp.match(/HTML/i)) {
+                tp = "HTML";
+            } else {
+                tp = "other";
+            }
+            proxy_response.on('data', function (chunk) {
+                if (tp === "other") {
+                    response.write(chunk, 'binary');
+                } else {
+                    buf += chunk.toString();
+                }
+            });
+            proxy_response.on('end', function () {
+                var output;
+                if (tp === "JavaScript") {
+                    output = rewriteScript(buf, {
+                        type: 'script',
+                        inline: false,
+                        url: request.url,
+                        source: buf
+                    }, rewriteFunc);
+                } else if (tp === "HTML") {
+                    output = rewriteHTML(buf, request.url, rewriteFunc, headerHTML, headerURLs);
+                }
+                if (output) {
+                    proxy_response.headers['content-length'] = Buffer.byteLength(output, 'utf-8');
+                    response.writeHead(proxy_response.statusCode, proxy_response.headers);
+                    response.write(output);
+                }
+                response.end();
+            });
+            if (tp === "other") {
+                response.writeHead(proxy_response.statusCode, proxy_response.headers);
+            }
+        });
+        proxyRequest.on('error', function (e) {
+            console.log("request error " + e.message);
+        });
+        request.on('data', function (chunk) {
+            proxyRequest.write(chunk, 'binary');
+        });
+        request.on('end', function () {
+            proxyRequest.end();
+        });
+    });
+    var port = options.port ? options.port : 8080;
+    server.listen(port);
 }
 exports.start = start;
 exports.rewriteHTML = rewriteHTML;
