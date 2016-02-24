@@ -15,20 +15,15 @@
 var assert = require("assert");
 var proxy = require("../rewriting-proxy");
 
-var jsdom = require('jsdom');
+var parse5 = require('parse5');
 
 // constants used by several tests
 var empty_doc = "<html><head></head><body></body></html>";
 
 // parse and pretty-print the given HTML
 function normalise(html) {
-    var document = jsdom.jsdom(html, {
-        features: {
-            FetchExternalResources: false,
-            ProcessExternalResources: false
-        }
-    });
-    return document.documentElement.outerHTML;
+    var document = parse5.parse(html, {locationInfo: false});
+    return parse5.serialize(document);
 }
 
 // utility function for writing tests
