@@ -13,16 +13,18 @@
     ],
     "description": "Proxy for rewriting JavaScript on-the-fly",
     "main": "rewriting-proxy.js",
-    "dependencies" : {
-        "jsdom": "1.5.0"
+    "dependencies": {
+        "parse5": "2.1.5"
     },
     "devDependencies": {
         "mocha": "2.1.0"
     },
-    "scripts": {"test": "./node_modules/.bin/mocha" },
+    "scripts": {
+        "test": "./node_modules/.bin/mocha"
+    },
     "license": "Eclipse",
-    "repository" : {
-        "type" : "git",
-        "url" : "https://github.com/msridhar/rewriting-proxy.git"
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/msridhar/rewriting-proxy.git"
     }
 }
