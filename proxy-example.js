@@ -19,6 +19,16 @@ var options = {
 		console.log("instrumenting " + metadata.url);
 		return src;		
 	},
+	rewriteOptions: {
+		onNodeVisited: function (node) {
+			// Tag every element in the HTML with its source location
+			if (node.tagName) {
+				var location = node.__location;
+				node.attrs.push({ name: "data-loc", value: location.line + ":" + location.col })
+			}
+		},
+		locationInfo: true
+	},
 	headerHTML: "<script>alert(\"hi\");</script>",
 	port: 8080
 };

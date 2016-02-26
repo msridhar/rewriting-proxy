@@ -142,6 +142,8 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs, options) {
  *  in any HTML
  * @param headerURLs an Array of script URLs.  These URLs will be loaded
  *  via <script> tags at the beginning of any HTML file.
+ * @param options (optional) an Object { onNodeVisited: Node -> void, locationInfo: boolean }; onNodeVisited(node)
+ *  is invoked to instrument the HTML subtree rooted at node (allowing the function to mutate the subtree).
  * @returns {string} the instrumented HTML
  */
 function rewriteHTML(html, url, rewriter, headerHTML, headerURLs, options) {
@@ -169,20 +171,30 @@ var server = null;
  *                 'javascript-url' for inline script in a "javascript:" URL
  *  Optional fields:
  *  - options.headerHTML: a String of HTML to be inserted just after the <head> tag
- *  in any HTML
+ *    in any HTML
  *  - options.headerURLs: an Array of script URLs.  These URLs will be loaded
- *  via <script> tags at the beginning of any HTML file.
+ *    via <script> tags at the beginning of any HTML file.
+ *  - options.rewriteOptions: an object that allows instrumenting the HTML.
+ *    The object includes fields:
+ *       - onNodeVisited: A function that is called with a HTML node when the
+ *                        entire subtree rooted at the node has been visited.
+ *                        The function return value is ignored; instead the function
+ *                        should mutate the subtree rooted at the node argument.
+ *       - locationInfo: A boolean that is parsed to the parse5 HTML parser,
+ *                       indicating whether node locations should be made available.
+ *                       (Disabled by default for performance.)
  *  - options.noInstRegExp: a RegExp to match against URLs; if the URL matches, no
- *  instrumentation or rewriting will be done
+ *    instrumentation or rewriting will be done
  *  - options.intercept: a function that takes a URL string from a request and returns
- *  JavaScript code for the response, or null if the request should be forwarded to the
- *  remote server.
+ *    JavaScript code for the response, or null if the request should be forwarded to the
+ *    remote server.
  */
 function start(options) {
     assert(options.rewriter, "must provide rewriter function in options.rewriter");
     var headerHTML = options.headerHTML;
     var headerURLs = options.headerURLs;
     var rewriteFunc = options.rewriter;
+    var rewriteOptions = options.rewriteOptions;
     var intercept = options.intercept;
     var noInstRegExp = options.noInstRegExp;
     server = http.createServer(function (request, response) {
@@ -242,7 +254,7 @@ function start(options) {
                         source: buf
                     }, rewriteFunc);
                 } else if (tp === "HTML") {
-                    output = rewriteHTML(buf, request.url, rewriteFunc, headerHTML, headerURLs);
+                    output = rewriteHTML(buf, request.url, rewriteFunc, headerHTML, headerURLs, rewriteOptions);
                 }
                 if (output) {
                     proxy_response.headers['content-length'] = Buffer.byteLength(output, 'utf-8');
