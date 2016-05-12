@@ -52,14 +52,21 @@ function rewriteScript(src, metadata, rewriteFunc) {
 var script_counter = 0,
     event_handler_counter = 0,
     js_url_counter = 0;
+
 // event handler attributes
-var event_handler_attribute_names = ["onabort", "onblur", "onchange", "onclick", "ondblclick",
-    "onerror", "onfocus", "onkeydown", "onkeypress", "onkeyup",
-    "onload", "onmousedown", "onmousemove", "onmouseout", "onmouseover",
-    "onmouseup", "onreset", "onresize", "onselect", "onsubmit", "onunload"
-];
+var eventHandlerAttributeNames = ['onabort', 'onafterprint', 'onbeforeprint',
+    'onbeforeunload', 'onblur', 'onchange', 'onclick', 'oncontextmenu',
+    'oncopy', 'oncut', 'ondblclick', 'ondrag', 'ondragend', 'ondragenter',
+    'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onerror',
+    'onfocus', 'onhashchange', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress',
+    'onkeyup', 'onload', 'onmessage', 'onmousedown', 'onmousemove', 'onmouseout',
+    'onmouseover', 'onmouseup', 'onmousewheel', 'onoffline', 'ononline', 'onpagehide',
+    'onpageshow', 'onpaste', 'onpopstate', 'onreadystatechange', 'onreset',
+    'onresize', 'onscroll', 'onsearch', 'onselect', 'onshow', 'onstorage',
+    'onsubmit', 'ontoggle', 'ontouchstart', 'onunload', 'onwheel'];
+
 // attributes that may contain URLs (unsure whether all of these can actually contain 'javascript:' URLs)
-var url_attribute_names = ["action", "cite", "code", "codebase", "data", "href", "manifest", "poster", "src"];
+var urlAttributeNames = ["action", "cite", "code", "codebase", "data", "href", "manifest", "poster", "src"];
 
 function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs, options) {
     // first, recursively process any child nodes
@@ -102,7 +109,7 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs, options) {
         }
     } else if (tagName) {
         // handle event handlers and 'javascript:' URLs
-        event_handler_attribute_names.forEach(function (name) {
+        eventHandlerAttributeNames.forEach(function (name) {
             var attr = getAttribute(node, name);
             if (attr) {
                 var metadata = {
@@ -114,7 +121,7 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs, options) {
                 attr.value = rewriteScript(attr.value, metadata, rewriteFunc);
             }
         });
-        url_attribute_names.forEach(function (name) {
+        urlAttributeNames.forEach(function (name) {
             var attr = getAttribute(node, name);
             if (attr && attr.value.match(/^javascript:/i)) {
                 var metadata = {
@@ -280,5 +287,9 @@ function start(options) {
     var port = options.port ? options.port : 8080;
     server.listen(port);
 }
+
 exports.start = start;
 exports.rewriteHTML = rewriteHTML;
+
+exports.eventHandlerAttributeNames = eventHandlerAttributeNames;
+exports.urlAttributeNames = urlAttributeNames;
