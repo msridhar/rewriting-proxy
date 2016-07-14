@@ -44,6 +44,12 @@ The `start(options)` function starts the proxy server on `localhost`.  Possible 
     * `inline`: For scripts of type `'script'`, indicates whether the script was inline.
     * `url`: A URL for the script; these are auto-generated for inline scripts, event handlers, etc.
 * `rewriteOptions`: An object that allows instrumenting the HTML. The object includes properties:
+    * `onBeforeNodeVisited`: A function that is called with a HTML node when the
+      entire subtree rooted at the node has been visited.
+      The function return value is ignored; instead the function
+      should mutate the subtree rooted at the node argument.
+      Is unlike `onNodeVisited` invoked prior to any JavaScript
+      instrumentation performed by `rewriter`.
     * `onNodeVisited`: A function that is called with a HTML node when the
       entire subtree rooted at the node has been visited.
       The function return value is ignored; instead the function

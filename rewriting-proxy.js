@@ -79,6 +79,10 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs, options) {
         }
     }
 
+    if (options.onBeforeNodeVisited) {
+        options.onBeforeNodeVisited(node);
+    }
+
     var tagName = (node.tagName || "").toLowerCase();
     if (tagName === 'head' && (headerHTML || headerURLs)) {
         // then, insert header code as first child
@@ -149,8 +153,11 @@ function walkDOM(node, url, rewriteFunc, headerHTML, headerURLs, options) {
  *  in any HTML
  * @param headerURLs an Array of script URLs.  These URLs will be loaded
  *  via <script> tags at the beginning of any HTML file.
- * @param options (optional) an Object { onNodeVisited: Node -> void, locationInfo: boolean }; onNodeVisited(node)
- *  is invoked to instrument the HTML subtree rooted at node (allowing the function to mutate the subtree).
+ * @param options (optional) an Object { onBeforeNodeVisited: Node -> void, onNodeVisited: Node -> void,
+ *  locationInfo: boolean }; onBeforeNodeVisited(node) and onNodeVisited(node) are invoked to instrument
+ *  the HTML subtree rooted at node (allowing the functions to mutate the subtree);
+ *  onBeforeNodeVisited(node) is, unlike onNodeVisited(node), invoked prior to any JavaScript
+ *  instrumentation performed by the rewriter function.
  * @returns {string} the instrumented HTML
  */
 function rewriteHTML(html, url, rewriter, headerHTML, headerURLs, options) {
